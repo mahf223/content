@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 6 8 11;
+  --fg: 232 240 248;
+  --brand: 31 187 232;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-manrope), system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle ambient grid background */
+.bg-app {
+  background-color: #06080b;
+  background-image:
+    radial-gradient(60rem 60rem at 80% -20%, rgba(31, 187, 232, 0.10), transparent 60%),
+    radial-gradient(40rem 40rem at -10% 110%, rgba(31, 187, 232, 0.06), transparent 60%);
+}
+
+/* Glass panel utility */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.035),
+    rgba(255, 255, 255, 0.015)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-strong {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Cyan glow ring used on focus / hover */
+.ring-glow {
+  box-shadow:
+    0 0 0 1px rgba(31, 187, 232, 0.35),
+    0 10px 40px -10px rgba(31, 187, 232, 0.55);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 187, 232, 0.35);
+}
+
+/* Number input chrome cleanup */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Recharts text inherits Manrope */
+.recharts-text {
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+}
