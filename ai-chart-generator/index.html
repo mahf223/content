@@ -1123,31 +1123,69 @@ async function exportImage(format /* 'png' | 'jpeg' */) {
   const W = state.exportSize.w, H = state.exportSize.h;
   showToast(`Exporting ${format.toUpperCase()} (${W}×${H})…`);
 
-  // Render to an offscreen canvas at requested size
+  // Offscreen canvas — IMPORTANT: attach to DOM so Chart.js can lay out correctly
   const off = document.createElement('canvas');
-  off.width = W; off.height = H;
-  const offCtx = off.getContext('2d');
+  off.width = W;
+  off.height = H;
+  off.style.cssText = 'position:fixed;left:-99999px;top:0;pointer-events:none;';
+  document.body.appendChild(off);
 
-  if (format === 'jpeg' || !state.bgTransparent) {
-    offCtx.fillStyle = state.bgTransparent ? '#0a1219' : state.bgColor;
-    offCtx.fillRect(0, 0, W, H);
+  try {
+    let tempChart = null;
+    if (state.chartType === 'circular') {
+      const offCtx = off.getContext('2d');
+      // Recompute target fresh in case user never animated the circular chart
+      const avg = state.rows.reduce((s, r) => s + (Number(r.value) || 0), 0) / Math.max(1, state.rows.length);
+      const target = Math.max(0, Math.min(100, avg));
+      drawCircularToContext(offCtx, W, H, target);
+    } else {
+      // For JPEG we MUST have an opaque background even if user picked transparent
+      if (format === 'jpeg' && state.bgTransparent) {
+        const c = off.getContext('2d');
+        c.fillStyle = '#0a1219';
+        c.fillRect(0, 0, W, H);
+      }
+      tempChart = await renderChartToContext(off, W, H);
+    }
+
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const ext  = format === 'png' ? 'png' : 'jpg';
+    const filename = `chart-${Date.now()}.${ext}`;
+
+    // toBlob is far more reliable than toDataURL for large canvases.
+    // We snapshot BEFORE destroying the chart — destroy() clears the canvas in Chart.js v4.
+    const blob = await canvasToBlob(off, mime, 0.95);
+
+    // Now safe to destroy the chart instance
+    if (tempChart) { try { tempChart.destroy(); } catch(e){} }
+
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+    } else {
+      // fallback for older browsers
+      const dataUrl = off.toDataURL(mime, 0.95);
+      triggerDownload(dataUrl, filename);
+    }
+    showToast(`${format.toUpperCase()} downloaded`);
+  } catch (err) {
+    console.error('Image export failed:', err);
+    showToast('Image export failed: ' + (err && err.message ? err.message : 'unknown error'));
+  } finally {
+    try { off.remove(); } catch(e){}
   }
+}
 
-  if (state.chartType === 'circular') {
-    // Render circular progress fully into offscreen
-    const prevCanvas = els.canvas;
-    // Re-route drawCircularProgress by temporarily swapping canvas? Simpler: draw directly here.
-    drawCircularToContext(offCtx, W, H, circularState.target);
-  } else {
-    // Build a one-off Chart.js instance on offscreen canvas with no animation, then draw
-    await renderChartToContext(off, offCtx, W, H);
-  }
-
-  // Logo overlay (already drawn by Chart.js plugin path; for circular branch, drawCircularToContext handles it)
-  const mime = format === 'png' ? 'image/png' : 'image/jpeg';
-  const dataUrl = off.toDataURL(mime, 0.95);
-  triggerDownload(dataUrl, `chart-${Date.now()}.${format === 'png' ? 'png' : 'jpg'}`);
-  showToast(`${format.toUpperCase()} downloaded`);
+function canvasToBlob(canvas, mime, quality) {
+  return new Promise((resolve) => {
+    if (!canvas.toBlob) { resolve(null); return; }
+    try {
+      canvas.toBlob((blob) => resolve(blob || null), mime, quality);
+    } catch(e) {
+      resolve(null);
+    }
+  });
 }
 
 function drawCircularToContext(ctx, w, h, targetPercent) {
@@ -1213,23 +1251,28 @@ function drawCircularToContext(ctx, w, h, targetPercent) {
   ctx.restore();
 }
 
-function renderChartToContext(off, ctx, W, H) {
-  return new Promise((resolve) => {
-    const cfg = getChartConfig();
-    cfg.options.animation = false;
-    cfg.options.responsive = false;
-    cfg.options.maintainAspectRatio = false;
-    cfg.plugins = [overlayPlugin];
+function renderChartToContext(off, W, H) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cfg = getChartConfig();
+      // Synchronous render — no animation
+      cfg.options.animation = false;
+      cfg.options.responsive = false;
+      cfg.options.maintainAspectRatio = false;
+      cfg.plugins = [overlayPlugin];
 
-    const tempChart = new Chart(ctx, cfg);
-    // Need to size: Chart.js uses canvas width/height we already set
-    tempChart.resize(W, H);
-    requestAnimationFrame(() => {
-      tempChart.draw();
-      // Logo already drawn by plugin afterDraw
-      tempChart.destroy();
-      resolve();
-    });
+      const tempChart = new Chart(off.getContext('2d'), cfg);
+      tempChart.resize(W, H);
+      // Two RAFs ensure layout + first draw have completed before we snapshot
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Hand the live chart back — caller snapshots, THEN destroys
+          resolve(tempChart);
+        });
+      });
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
