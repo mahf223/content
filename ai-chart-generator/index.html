@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChartForge AI – Animated Chart Generator</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- html2canvas CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Manrope Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            DEFAULT: '#1FBBE8',
+            50:  '#e8f9ff',
+            100: '#c4eefc',
+            200: '#8bdcf6',
+            300: '#52caf0',
+            400: '#1FBBE8',
+            500: '#0fa3ce',
+            600: '#0a87ab',
+            700: '#076d8b',
+          }
+        },
+        fontFamily: {
+          manrope: ['Manrope', 'system-ui', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root {
+    --brand: #1FBBE8;
+    --brand-glow: rgba(31, 187, 232, 0.45);
+    --bg-0: #07090d;
+    --bg-1: #0c1117;
+    --bg-2: #121a23;
+    --bg-3: #182230;
+    --line: rgba(255, 255, 255, 0.07);
+    --line-strong: rgba(255, 255, 255, 0.12);
+  }
+
+  * { font-family: 'Manrope', system-ui, sans-serif; }
+
+  html, body {
+    background: radial-gradient(1200px 600px at 10% -10%, rgba(31,187,232,0.15), transparent 60%),
+                radial-gradient(900px 500px at 110% 10%, rgba(31,187,232,0.10), transparent 55%),
+                #07090d;
+    color: #e8eef6;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(31,187,232,0.25);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(31,187,232,0.45); }
+
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px -20px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(255,255,255,0.02) inset;
+  }
+
+  .glow-border {
+    position: relative;
+  }
+  .glow-border::before {
+    content: '';
+    position: absolute; inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(31,187,232,0.6), rgba(31,187,232,0) 40%, rgba(31,187,232,0.2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(180deg, #2dc8f3, #1FBBE8);
+    color: #04161d;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 10px 16px;
+    transition: transform .15s ease, box-shadow .25s ease, filter .2s ease;
+    box-shadow: 0 8px 30px -8px var(--brand-glow), 0 0 0 1px rgba(255,255,255,0.06) inset;
+  }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 14px 40px -10px var(--brand-glow); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line-strong);
+    color: #e8eef6;
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: background .2s, border-color .2s, transform .15s;
+  }
+  .btn-ghost:hover { background: rgba(31,187,232,0.10); border-color: rgba(31,187,232,0.45); }
+  .btn-ghost:active { transform: translateY(1px); }
+
+  .btn-danger {
+    background: rgba(255, 60, 80, 0.08);
+    border: 1px solid rgba(255, 60, 80, 0.25);
+    color: #ff8895;
+    border-radius: 10px;
+    padding: 6px 10px;
+    transition: background .2s;
+  }
+  .btn-danger:hover { background: rgba(255, 60, 80, 0.18); }
+
+  .input,
+  .select,
+  .textarea {
+    width: 100%;
+    background: #0d141c;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    color: #e8eef6;
+    padding: 10px 12px;
+    transition: border-color .15s, box-shadow .15s;
+    font-size: 14px;
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px rgba(31,187,232,0.15);
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9fb1c4;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .chip {
+    background: rgba(31,187,232,0.12);
+    color: #8bdcf6;
+    border: 1px solid rgba(31,187,232,0.25);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* Range slider */
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: linear-gradient(90deg, #1FBBE8 var(--val,50%), rgba(255,255,255,0.08) var(--val,50%));
+    border-radius: 999px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px; width: 18px;
+    background: #fff;
+    border: 3px solid #1FBBE8;
+    border-radius: 999px;
+    margin-top: -6px;
+    box-shadow: 0 4px 14px var(--brand-glow);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    height: 18px; width: 18px;
+    background: #fff;
+    border: 3px solid #1FBBE8;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px var(--brand-glow);
+    cursor: pointer;
+  }
+
+  /* Color picker swatch */
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 36px; height: 36px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+  input[type="color"]::-moz-color-swatch { border: none; border-radius: 8px; }
+
+  /* Chart type pills */
+  .pill {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line-strong);
+    color: #cfd8e3;
+    border-radius: 12px;
+    padding: 10px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .pill:hover {
+    border-color: rgba(31,187,232,0.45);
+    color: #fff;
+  }
+  .pill.active {
+    background: linear-gradient(180deg, rgba(31,187,232,0.18), rgba(31,187,232,0.06));
+    border-color: rgba(31,187,232,0.7);
+    color: #fff;
+    box-shadow: 0 6px 24px -10px var(--brand-glow), 0 0 0 1px rgba(31,187,232,0.25) inset;
+  }
+  .pill svg { width: 22px; height: 22px; }
+
+  .preview-canvas-wrap {
+    position: relative;
+    background:
+      radial-gradient(800px 400px at 50% 0%, rgba(31,187,232,0.10), transparent 60%),
+      linear-gradient(180deg, #0a1219, #070a0f);
+    border-radius: 20px;
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+
+  .recording-dot {
+    position: absolute; top: 16px; right: 16px;
+    display: none; align-items: center; gap: 8px;
+    background: rgba(255,40,60,0.12);
+    color: #ff6b80;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,40,60,0.35);
+    border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    z-index: 5;
+  }
+  .recording-dot.active { display: inline-flex; }
+  .recording-dot::before {
+    content: '';
+    width: 8px; height: 8px; border-radius: 999px; background: #ff3b53;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .35; transform: scale(0.85); }
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #0d141c; color: #e8eef6;
+    padding: 12px 18px; border-radius: 12px;
+    border: 1px solid rgba(31,187,232,0.4);
+    box-shadow: 0 14px 40px -10px var(--brand-glow);
+    opacity: 0; transition: opacity .25s, transform .25s;
+    z-index: 100; font-size: 14px; font-weight: 600;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1FBBE8, #0a87ab);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px -8px var(--brand-glow);
+  }
+
+  .row-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px;
+    transition: border-color .2s, transform .2s;
+  }
+  .row-card:hover { border-color: rgba(31,187,232,0.35); }
+
+  .divider {
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+    margin: 18px 0;
+  }
+
+  .size-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: left;
+  }
+  .size-card:hover {
+    border-color: rgba(31,187,232,0.5);
+    background: rgba(31,187,232,0.06);
+  }
+  .size-card.active {
+    border-color: rgba(31,187,232,0.8);
+    background: rgba(31,187,232,0.12);
+  }
+
+  .help-tip {
+    font-size: 11px; color: #7d8ea2;
+  }
+
+  /* Mobile: tighten layout */
+  @media (max-width: 1023px) {
+    .preview-canvas-wrap { min-height: 360px; }
+  }
+</style>
+</head>
+
+<body class="font-manrope">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-30 glass">
+  <div class="max-w-[1500px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/>
+          <path d="M7 14l3-3 4 4 5-6"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-[15px] font-extrabold tracking-tight">ChartForge <span class="text-brand">AI</span></div>
+        <div class="text-[11px] text-slate-400 -mt-0.5">Animated chart generator</div>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-2">
+      <span class="chip">v1.0 · Browser-native</span>
+      <a href="#" onclick="showToast('Made with Tailwind, Chart.js & MediaRecorder API'); return false;" class="btn-ghost text-sm">About</a>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-[1500px] mx-auto px-4 sm:px-6 py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT: DATA INPUT -->
+    <aside class="lg:col-span-3 card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[15px] font-bold">Data</div>
+          <div class="text-xs text-slate-400">Add labels and percentages</div>
+        </div>
+        <span class="chip" id="rowCountChip">2 rows</span>
+      </div>
+
+      <div id="rowsContainer" class="space-y-2.5"></div>
+
+      <button id="addRowBtn" class="btn-ghost w-full mt-3 flex items-center justify-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add row
+      </button>
+
+      <div class="divider"></div>
+
+      <div class="space-y-3">
+        <div>
+          <div class="label mb-1.5">Chart title</div>
+          <input id="titleInput" class="input" placeholder="My beautiful chart" value="SEO Performance Comparison" />
+        </div>
+        <div>
+          <div class="label mb-1.5">Subtitle</div>
+          <input id="subtitleInput" class="input" placeholder="Optional subtitle" value="Traditional vs AI-driven SEO · 2026" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="space-y-3">
+        <div>
+          <div class="label mb-1.5">Brand logo</div>
+          <label class="btn-ghost w-full flex items-center justify-center gap-2 cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span id="logoBtnLabel">Upload logo</span>
+            <input id="logoInput" type="file" accept="image/*" class="hidden" />
+          </label>
+          <div class="help-tip mt-1">PNG with transparency works best</div>
+        </div>
+        <button id="logoClearBtn" class="btn-ghost w-full text-sm hidden">Remove logo</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: PREVIEW -->
+    <section class="lg:col-span-6 card p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <div class="text-[15px] font-bold">Live preview</div>
+          <div class="text-xs text-slate-400">Updates as you type · animated</div>
+        </div>
+        <button id="replayBtn" class="btn-ghost text-sm flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Replay animation
+        </button>
+      </div>
+
+      <div class="preview-canvas-wrap aspect-[16/10]">
+        <div id="recordingDot" class="recording-dot"><span>REC</span></div>
+        <canvas id="chartCanvas"></canvas>
+      </div>
+
+      <!-- Chart type picker -->
+      <div class="mt-5">
+        <div class="label mb-2">Chart type</div>
+        <div class="grid grid-cols-5 gap-2">
+          <button class="pill active" data-type="pie">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+            Pie
+          </button>
+          <button class="pill" data-type="doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+            Doughnut
+          </button>
+          <button class="pill" data-type="bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Bar
+          </button>
+          <button class="pill" data-type="line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+            Line
+          </button>
+          <button class="pill" data-type="circular">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 1 9 9"/></svg>
+            Progress
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: SETTINGS / EXPORT -->
+    <aside class="lg:col-span-3 card p-5">
+      <div class="text-[15px] font-bold">Style & Export</div>
+      <div class="text-xs text-slate-400 mb-4">Customize and download</div>
+
+      <!-- Animation -->
+      <div class="space-y-3">
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="label">Animation speed</div>
+            <span id="speedLabel" class="text-xs text-slate-300 font-semibold">1500 ms</span>
+          </div>
+          <input id="speedRange" type="range" min="300" max="4000" step="100" value="1500" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="label">Background</div>
+            <span class="text-xs text-slate-400">Preview & exports</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="bgColor" type="color" value="#0a1219" />
+            <button id="bgTransparent" class="btn-ghost text-xs flex-1">Transparent</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="label mb-1.5">Text color</div>
+          <input id="textColor" type="color" value="#e8eef6" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Image Export -->
+      <div>
+        <div class="label mb-2">Image export</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="exportPng" class="btn-primary text-sm">PNG</button>
+          <button id="exportJpg" class="btn-ghost text-sm">JPG</button>
+        </div>
+        <div class="help-tip mt-1.5">Uses html2canvas + canvas snapshot</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Video Export -->
+      <div>
+        <div class="label mb-2">Video export</div>
+        <button id="exportVideo" class="btn-primary w-full flex items-center justify-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          <span id="exportVideoLabel">Record animation</span>
+        </button>
+        <div class="help-tip mt-1.5">MediaRecorder API · WebM output</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Social media export sizes -->
+      <div>
+        <div class="label mb-2">Export size preset</div>
+        <div class="grid grid-cols-1 gap-2">
+          <button class="size-card active" data-w="1200" data-h="750" data-name="Default 16:10">
+            <div class="text-sm font-semibold">Default · 16:10</div>
+            <div class="text-[11px] text-slate-400">1200 × 750</div>
+          </button>
+          <button class="size-card" data-w="1080" data-h="1080" data-name="Instagram square">
+            <div class="text-sm font-semibold">Instagram · Square</div>
+            <div class="text-[11px] text-slate-400">1080 × 1080</div>
+          </button>
+          <button class="size-card" data-w="1080" data-h="1920" data-name="Story / Reels">
+            <div class="text-sm font-semibold">Story / Reels</div>
+            <div class="text-[11px] text-slate-400">1080 × 1920</div>
+          </button>
+          <button class="size-card" data-w="1200" data-h="630" data-name="LinkedIn / X / OG">
+            <div class="text-sm font-semibold">LinkedIn / X / OG</div>
+            <div class="text-[11px] text-slate-400">1200 × 630</div>
+          </button>
+          <button class="size-card" data-w="1920" data-h="1080" data-name="YouTube / Full HD">
+            <div class="text-sm font-semibold">YouTube · Full HD</div>
+            <div class="text-[11px] text-slate-400">1920 × 1080</div>
+          </button>
+        </div>
+        <div class="help-tip mt-2">Affects PNG, JPG and video output</div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="text-center text-xs text-slate-500 mt-8 mb-4">
+    Built with Tailwind · Chart.js · MediaRecorder API · html2canvas — single-file, no backend.
+  </footer>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   ChartForge AI – single-file animated chart generator
+   ============================================================ */
+
+const PALETTE = [
+  '#1FBBE8', '#7C5CFF', '#FF6BAA', '#FFC857', '#3DDC97',
+  '#FF7A59', '#5CC8FF', '#B589FF', '#FFD166', '#06D6A0'
+];
+
+const state = {
+  rows: [
+    { label: 'Traditional SEO', value: 52, color: '#1FBBE8' },
+    { label: 'AI SEO',          value: 59, color: '#7C5CFF' },
+  ],
+  chartType: 'pie',
+  title:    'SEO Performance Comparison',
+  subtitle: 'Traditional vs AI-driven SEO · 2026',
+  animationSpeed: 1500,
+  bgColor: '#0a1219',
+  bgTransparent: false,
+  textColor: '#e8eef6',
+  exportSize: { w: 1200, h: 750, name: 'Default 16:10' },
+  logoDataUrl: null,
+};
+
+const els = {
+  rowsContainer: document.getElementById('rowsContainer'),
+  rowCountChip:  document.getElementById('rowCountChip'),
+  addRowBtn:     document.getElementById('addRowBtn'),
+  titleInput:    document.getElementById('titleInput'),
+  subtitleInput: document.getElementById('subtitleInput'),
+  speedRange:    document.getElementById('speedRange'),
+  speedLabel:    document.getElementById('speedLabel'),
+  bgColor:       document.getElementById('bgColor'),
+  bgTransparent: document.getElementById('bgTransparent'),
+  textColor:     document.getElementById('textColor'),
+  canvas:        document.getElementById('chartCanvas'),
+  pills:         document.querySelectorAll('.pill'),
+  sizeCards:     document.querySelectorAll('.size-card'),
+  exportPng:     document.getElementById('exportPng'),
+  exportJpg:     document.getElementById('exportJpg'),
+  exportVideo:   document.getElementById('exportVideo'),
+  exportVideoLabel: document.getElementById('exportVideoLabel'),
+  recordingDot:  document.getElementById('recordingDot'),
+  replayBtn:     document.getElementById('replayBtn'),
+  logoInput:     document.getElementById('logoInput'),
+  logoBtnLabel:  document.getElementById('logoBtnLabel'),
+  logoClearBtn:  document.getElementById('logoClearBtn'),
+  toast:         document.getElementById('toast'),
+};
+
+let chart = null;       // Chart.js instance (used for non-circular types)
+let circularRAF = null; // For circular progress custom animation
+let circularState = { progress: 0, target: 0, startTs: 0, duration: 1500 };
+let logoImage = null;
+
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function showToast(msg) {
+  els.toast.textContent = msg;
+  els.toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2400);
+}
+
+/* ---------- Rows UI ---------- */
+function renderRows() {
+  els.rowsContainer.innerHTML = '';
+  state.rows.forEach((row, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'row-card';
+    wrap.innerHTML = `
+      <div class="flex items-center gap-2">
+        <input type="color" value="${row.color}" data-act="color" data-idx="${idx}" title="Series color"/>
+        <input class="input" type="text" placeholder="Label" value="${escapeHtml(row.label)}" data-act="label" data-idx="${idx}" />
+        <button class="btn-danger text-xs" data-act="del" data-idx="${idx}" title="Remove row" ${state.rows.length<=1?'disabled style="opacity:.4;cursor:not-allowed"':''}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="mt-2 flex items-center gap-2">
+        <div class="flex-1 flex items-center gap-2">
+          <input class="input" type="number" min="0" max="100" step="0.1" value="${row.value}" data-act="value" data-idx="${idx}" />
+          <span class="text-slate-400 text-sm">%</span>
+        </div>
+      </div>
+    `;
+    els.rowsContainer.appendChild(wrap);
+  });
+
+  els.rowCountChip.textContent = state.rows.length + (state.rows.length === 1 ? ' row' : ' rows');
+
+  // bind events
+  els.rowsContainer.querySelectorAll('input,button').forEach(el => {
+    const act = el.dataset.act;
+    const idx = parseInt(el.dataset.idx, 10);
+    if (act === 'label') {
+      el.addEventListener('input', e => { state.rows[idx].label = e.target.value; updateChart(); });
+    } else if (act === 'value') {
+      el.addEventListener('input', e => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) v = 0;
+        v = Math.max(0, Math.min(100, v));
+        state.rows[idx].value = v;
+        updateChart();
+      });
+    } else if (act === 'color') {
+      el.addEventListener('input', e => { state.rows[idx].color = e.target.value; updateChart(); });
+    } else if (act === 'del') {
+      el.addEventListener('click', () => {
+        if (state.rows.length <= 1) return;
+        state.rows.splice(idx, 1);
+        renderRows();
+        updateChart();
+      });
+    }
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[s]));
+}
+
+/* ---------- Chart rendering ---------- */
+function destroyChart() {
+  if (chart) { chart.destroy(); chart = null; }
+  if (circularRAF) { cancelAnimationFrame(circularRAF); circularRAF = null; }
+}
+
+function ensureCanvasSize() {
+  // Match canvas backing store to container size for crisp rendering
+  const wrap = els.canvas.parentElement;
+  const rect = wrap.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  els.canvas.width  = Math.max(300, Math.floor(rect.width  * dpr));
+  els.canvas.height = Math.max(200, Math.floor(rect.height * dpr));
+  els.canvas.style.width  = '100%';
+  els.canvas.style.height = '100%';
+}
+
+function getChartConfig() {
+  const labels = state.rows.map(r => r.label || '—');
+  const values = state.rows.map(r => Number(r.value) || 0);
+  const colors = state.rows.map((r, i) => r.color || PALETTE[i % PALETTE.length]);
+
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    animation: {
+      duration: state.animationSpeed,
+      easing: 'easeOutCubic',
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          color: state.textColor,
+          font: { family: 'Manrope', size: 13, weight: '600' },
+          padding: 14,
+          usePointStyle: true,
+        }
+      },
+      title: {
+        display: !!state.title,
+        text: state.title,
+        color: state.textColor,
+        font: { family: 'Manrope', size: 20, weight: '800' },
+        padding: { top: 6, bottom: 2 }
+      },
+      subtitle: {
+        display: !!state.subtitle,
+        text: state.subtitle,
+        color: state.textColor,
+        font: { family: 'Manrope', size: 13, weight: '500' },
+        padding: { bottom: 16 }
+      },
+      tooltip: {
+        backgroundColor: '#0c1117',
+        titleColor: '#fff',
+        bodyColor: '#cfd8e3',
+        borderColor: '#1FBBE8',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: (ctx) => ` ${ctx.label}: ${ctx.parsed?.y ?? ctx.parsed}%`
+        }
+      }
+    }
+  };
+
+  if (state.chartType === 'pie' || state.chartType === 'doughnut') {
+    return {
+      type: state.chartType,
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderColor: state.bgTransparent ? 'rgba(255,255,255,0.1)' : state.bgColor,
+          borderWidth: 3,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        ...baseOpts,
+        cutout: state.chartType === 'doughnut' ? '60%' : 0,
+        plugins: {
+          ...baseOpts.plugins,
+          tooltip: {
+            ...baseOpts.plugins.tooltip,
+            callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%` }
+          }
+        }
+      }
+    };
+  }
+
+  if (state.chartType === 'bar') {
+    return {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Value',
+          data: values,
+          backgroundColor: colors.map(c => c),
+          borderRadius: 12,
+          borderSkipped: false,
+          maxBarThickness: 80,
+        }]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          x: {
+            ticks: { color: state.textColor, font: { family: 'Manrope', weight: '600' } },
+            grid:  { color: 'rgba(255,255,255,0.05)' }
+          },
+          y: {
+            beginAtZero: true, max: 100,
+            ticks: { color: state.textColor, font: { family: 'Manrope' }, callback: v => v + '%' },
+            grid:  { color: 'rgba(255,255,255,0.06)' }
+          }
+        },
+        plugins: { ...baseOpts.plugins, legend: { display: false } }
+      }
+    };
+  }
+
+  if (state.chartType === 'line') {
+    return {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Value',
+          data: values,
+          borderColor: '#1FBBE8',
+          backgroundColor: 'rgba(31,187,232,0.18)',
+          pointBackgroundColor: colors,
+          pointBorderColor: '#fff',
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+        }]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          x: { ticks: { color: state.textColor, font: { family: 'Manrope', weight: '600' } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { beginAtZero: true, max: 100, ticks: { color: state.textColor, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        },
+        plugins: { ...baseOpts.plugins, legend: { display: false } }
+      }
+    };
+  }
+
+  return null;
+}
+
+function paintBackgroundIfNeeded(ctx) {
+  if (state.bgTransparent) return;
+  ctx.save();
+  ctx.fillStyle = state.bgColor;
+  ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
+  ctx.restore();
+}
+
+function drawLogoOverlay() {
+  if (!logoImage) return;
+  const ctx = els.canvas.getContext('2d');
+  const cw = els.canvas.width, ch = els.canvas.height;
+  const maxW = cw * 0.10;
+  const ratio = logoImage.width / logoImage.height;
+  let w = maxW, h = w / ratio;
+  if (h > ch * 0.10) { h = ch * 0.10; w = h * ratio; }
+  const pad = Math.round(cw * 0.018);
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+  ctx.drawImage(logoImage, cw - w - pad, ch - h - pad, w, h);
+  ctx.restore();
+}
+
+/* Chart.js plugin: paint background + draw logo each frame
+   This is critical for video capture so backgrounds are baked in */
+const overlayPlugin = {
+  id: 'forgeOverlay',
+  beforeDraw(c) {
+    const ctx = c.ctx;
+    if (!state.bgTransparent) {
+      ctx.save();
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.restore();
+    }
+  },
+  afterDraw(c) {
+    if (logoImage) {
+      const ctx = c.ctx;
+      const cw = c.width, ch = c.height;
+      const maxW = cw * 0.10;
+      const ratio = logoImage.width / logoImage.height;
+      let w = maxW, h = w / ratio;
+      if (h > ch * 0.10) { h = ch * 0.10; w = h * ratio; }
+      const pad = Math.round(cw * 0.018);
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(logoImage, cw - w - pad, ch - h - pad, w, h);
+      ctx.restore();
+    }
+  }
+};
+
+function renderChart() {
+  destroyChart();
+  ensureCanvasSize();
+
+  if (state.chartType === 'circular') {
+    renderCircularProgress();
+    return;
+  }
+
+  const cfg = getChartConfig();
+  if (!cfg) return;
+  cfg.plugins = [overlayPlugin];
+  chart = new Chart(els.canvas.getContext('2d'), cfg);
+}
+
+/* ---------- Custom circular progress (for "circular" type) ---------- */
+function renderCircularProgress({ animate = true } = {}) {
+  ensureCanvasSize();
+  const target = state.rows.reduce((sum, r) => sum + (Number(r.value) || 0), 0) / Math.max(1, state.rows.length);
+  circularState.target = Math.max(0, Math.min(100, target));
+  circularState.duration = state.animationSpeed;
+  circularState.startTs = performance.now();
+  circularState.progress = animate ? 0 : circularState.target;
+
+  const step = (ts) => {
+    const elapsed = ts - circularState.startTs;
+    const t = animate ? Math.min(1, elapsed / circularState.duration) : 1;
+    const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    circularState.progress = circularState.target * eased;
+    drawCircularProgress();
+    if (t < 1) {
+      circularRAF = requestAnimationFrame(step);
+    } else {
+      circularRAF = null;
+    }
+  };
+  circularRAF = requestAnimationFrame(step);
+}
+
+function drawCircularProgress() {
+  const ctx = els.canvas.getContext('2d');
+  const w = els.canvas.width, h = els.canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  if (!state.bgTransparent) {
+    ctx.fillStyle = state.bgColor;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Title / subtitle
+  const titleY = h * 0.10;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = state.textColor;
+  ctx.font = `800 ${Math.round(w * 0.022)}px Manrope, sans-serif`;
+  if (state.title) ctx.fillText(state.title, w / 2, titleY);
+
+  ctx.font = `500 ${Math.round(w * 0.014)}px Manrope, sans-serif`;
+  ctx.fillStyle = state.textColor;
+  ctx.globalAlpha = 0.75;
+  if (state.subtitle) ctx.fillText(state.subtitle, w / 2, titleY + Math.round(w * 0.024));
+  ctx.globalAlpha = 1;
+
+  // Ring
+  const cx = w / 2;
+  const cy = h * 0.55;
+  const radius = Math.min(w, h) * 0.28;
+  const lineWidth = Math.max(12, Math.round(radius * 0.18));
+
+  // Track
+  ctx.beginPath();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Gradient stroke
+  const grad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+  grad.addColorStop(0, '#1FBBE8');
+  grad.addColorStop(1, state.rows[0]?.color || '#7C5CFF');
+
+  // Progress
+  const start = -Math.PI / 2;
+  const end = start + (Math.PI * 2) * (circularState.progress / 100);
+  ctx.beginPath();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = grad;
+  ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(31,187,232,0.55)';
+  ctx.shadowBlur = 24;
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Percentage
+  ctx.fillStyle = state.textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `800 ${Math.round(radius * 0.55)}px Manrope, sans-serif`;
+  ctx.fillText(circularState.progress.toFixed(0) + '%', cx, cy - radius * 0.05);
+
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `600 ${Math.round(radius * 0.16)}px Manrope, sans-serif`;
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('Average score', cx, cy + radius * 0.45);
+  ctx.globalAlpha = 1;
+
+  // Legend below
+  const legendY = cy + radius + Math.max(40, lineWidth);
+  const items = state.rows.map((r, i) => ({
+    label: r.label || `Series ${i+1}`,
+    color: r.color || PALETTE[i % PALETTE.length],
+    value: Number(r.value) || 0
+  }));
+  ctx.font = `600 ${Math.round(w * 0.013)}px Manrope, sans-serif`;
+  const gap = Math.round(w * 0.025);
+  const widths = items.map(it => ctx.measureText(`${it.label} ${it.value}%`).width + Math.round(w * 0.025));
+  const totalW = widths.reduce((a,b) => a+b, 0) + gap * (items.length - 1);
+  let x = cx - totalW / 2;
+  items.forEach((it, i) => {
+    ctx.beginPath();
+    ctx.fillStyle = it.color;
+    ctx.arc(x + 8, legendY - 5, Math.round(w * 0.007), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = state.textColor;
+    ctx.textAlign = 'left';
+    ctx.fillText(`${it.label} ${it.value}%`, x + Math.round(w * 0.020), legendY);
+    x += widths[i] + gap;
+  });
+
+  // Logo
+  if (logoImage) {
+    const maxW = w * 0.10;
+    const ratio = logoImage.width / logoImage.height;
+    let lw = maxW, lh = lw / ratio;
+    if (lh > h * 0.10) { lh = h * 0.10; lw = lh * ratio; }
+    const pad = Math.round(w * 0.018);
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(logoImage, w - lw - pad, h - lh - pad, lw, lh);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---------- updateChart ----------
+   Updates data without full rebuild when type unchanged for smoother feel.
+*/
+let lastType = null;
+function updateChart() {
+  if (state.chartType !== lastType) {
+    lastType = state.chartType;
+    renderChart();
+    return;
+  }
+
+  if (state.chartType === 'circular') {
+    renderCircularProgress();
+    return;
+  }
+
+  if (!chart) { renderChart(); return; }
+
+  const labels = state.rows.map(r => r.label || '—');
+  const values = state.rows.map(r => Number(r.value) || 0);
+  const colors = state.rows.map((r, i) => r.color || PALETTE[i % PALETTE.length]);
+
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = values;
+
+  if (state.chartType === 'pie' || state.chartType === 'doughnut') {
+    chart.data.datasets[0].backgroundColor = colors;
+    chart.data.datasets[0].borderColor = state.bgTransparent ? 'rgba(255,255,255,0.1)' : state.bgColor;
+  } else if (state.chartType === 'bar') {
+    chart.data.datasets[0].backgroundColor = colors;
+  } else if (state.chartType === 'line') {
+    chart.data.datasets[0].pointBackgroundColor = colors;
+  }
+
+  chart.options.plugins.title.text = state.title;
+  chart.options.plugins.title.display = !!state.title;
+  chart.options.plugins.subtitle.text = state.subtitle;
+  chart.options.plugins.subtitle.display = !!state.subtitle;
+  chart.options.plugins.title.color = state.textColor;
+  chart.options.plugins.subtitle.color = state.textColor;
+  chart.options.plugins.legend.labels.color = state.textColor;
+  chart.options.animation.duration = state.animationSpeed;
+
+  if (chart.options.scales) {
+    Object.values(chart.options.scales).forEach(s => {
+      if (s.ticks) s.ticks.color = state.textColor;
+    });
+  }
+
+  chart.update();
+}
+
+/* ---------- Replay animation ---------- */
+function replayAnimation() {
+  if (state.chartType === 'circular') {
+    renderCircularProgress({ animate: true });
+  } else {
+    renderChart(); // fully re-creates → triggers entry animation
+  }
+}
+
+/* ---------- Image export ---------- */
+async function exportImage(format /* 'png' | 'jpeg' */) {
+  const W = state.exportSize.w, H = state.exportSize.h;
+  showToast(`Exporting ${format.toUpperCase()} (${W}×${H})…`);
+
+  // Offscreen canvas — IMPORTANT: attach to DOM so Chart.js can lay out correctly
+  const off = document.createElement('canvas');
+  off.width = W;
+  off.height = H;
+  off.style.cssText = 'position:fixed;left:-99999px;top:0;pointer-events:none;';
+  document.body.appendChild(off);
+
+  try {
+    let tempChart = null;
+    if (state.chartType === 'circular') {
+      const offCtx = off.getContext('2d');
+      // Recompute target fresh in case user never animated the circular chart
+      const avg = state.rows.reduce((s, r) => s + (Number(r.value) || 0), 0) / Math.max(1, state.rows.length);
+      const target = Math.max(0, Math.min(100, avg));
+      drawCircularToContext(offCtx, W, H, target);
+    } else {
+      // For JPEG we MUST have an opaque background even if user picked transparent
+      if (format === 'jpeg' && state.bgTransparent) {
+        const c = off.getContext('2d');
+        c.fillStyle = '#0a1219';
+        c.fillRect(0, 0, W, H);
+      }
+      tempChart = await renderChartToContext(off, W, H);
+    }
+
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const ext  = format === 'png' ? 'png' : 'jpg';
+    const filename = `chart-${Date.now()}.${ext}`;
+
+    // toBlob is far more reliable than toDataURL for large canvases.
+    // We snapshot BEFORE destroying the chart — destroy() clears the canvas in Chart.js v4.
+    const blob = await canvasToBlob(off, mime, 0.95);
+
+    // Now safe to destroy the chart instance
+    if (tempChart) { try { tempChart.destroy(); } catch(e){} }
+
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+    } else {
+      // fallback for older browsers
+      const dataUrl = off.toDataURL(mime, 0.95);
+      triggerDownload(dataUrl, filename);
+    }
+    showToast(`${format.toUpperCase()} downloaded`);
+  } catch (err) {
+    console.error('Image export failed:', err);
+    showToast('Image export failed: ' + (err && err.message ? err.message : 'unknown error'));
+  } finally {
+    try { off.remove(); } catch(e){}
+  }
+}
+
+function canvasToBlob(canvas, mime, quality) {
+  return new Promise((resolve) => {
+    if (!canvas.toBlob) { resolve(null); return; }
+    try {
+      canvas.toBlob((blob) => resolve(blob || null), mime, quality);
+    } catch(e) {
+      resolve(null);
+    }
+  });
+}
+
+function drawCircularToContext(ctx, w, h, targetPercent) {
+  ctx.save();
+  if (!state.bgTransparent) {
+    ctx.fillStyle = state.bgColor;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = state.textColor;
+  ctx.font = `800 ${Math.round(w * 0.034)}px Manrope, sans-serif`;
+  if (state.title) ctx.fillText(state.title, w / 2, h * 0.12);
+  ctx.font = `500 ${Math.round(w * 0.020)}px Manrope, sans-serif`;
+  ctx.globalAlpha = 0.75;
+  if (state.subtitle) ctx.fillText(state.subtitle, w / 2, h * 0.12 + Math.round(w * 0.034));
+  ctx.globalAlpha = 1;
+
+  const cx = w / 2, cy = h * 0.55;
+  const radius = Math.min(w, h) * 0.28;
+  const lineWidth = Math.max(16, Math.round(radius * 0.18));
+
+  ctx.beginPath();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const grad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+  grad.addColorStop(0, '#1FBBE8');
+  grad.addColorStop(1, state.rows[0]?.color || '#7C5CFF');
+
+  const start = -Math.PI / 2;
+  const end = start + (Math.PI * 2) * (targetPercent / 100);
+  ctx.beginPath();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = grad;
+  ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(31,187,232,0.55)';
+  ctx.shadowBlur = 24;
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = state.textColor;
+  ctx.textBaseline = 'middle';
+  ctx.font = `800 ${Math.round(radius * 0.55)}px Manrope, sans-serif`;
+  ctx.fillText(targetPercent.toFixed(0) + '%', cx, cy - radius * 0.05);
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `600 ${Math.round(radius * 0.16)}px Manrope, sans-serif`;
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('Average score', cx, cy + radius * 0.45);
+  ctx.globalAlpha = 1;
+
+  if (logoImage) {
+    const maxW = w * 0.10;
+    const ratio = logoImage.width / logoImage.height;
+    let lw = maxW, lh = lw / ratio;
+    if (lh > h * 0.10) { lh = h * 0.10; lw = lh * ratio; }
+    const pad = Math.round(w * 0.018);
+    ctx.drawImage(logoImage, w - lw - pad, h - lh - pad, lw, lh);
+  }
+  ctx.restore();
+}
+
+function renderChartToContext(off, W, H) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cfg = getChartConfig();
+      // Synchronous render — no animation
+      cfg.options.animation = false;
+      cfg.options.responsive = false;
+      cfg.options.maintainAspectRatio = false;
+      cfg.plugins = [overlayPlugin];
+
+      const tempChart = new Chart(off.getContext('2d'), cfg);
+      tempChart.resize(W, H);
+      // Two RAFs ensure layout + first draw have completed before we snapshot
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Hand the live chart back — caller snapshots, THEN destroys
+          resolve(tempChart);
+        });
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function triggerDownload(dataUrl, filename) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+/* ---------- Video export ----------
+   Strategy: render chart at the export-size on an offscreen canvas with a fresh
+   Chart.js instance (or custom circular animation), capture its stream via
+   captureStream, record with MediaRecorder, then download a webm file. */
+async function exportVideo() {
+  if (!('MediaRecorder' in window)) {
+    showToast('MediaRecorder is not supported in this browser');
+    return;
+  }
+  if (els.exportVideo.disabled) return;
+
+  const W = state.exportSize.w, H = state.exportSize.h;
+  const duration = Math.max(800, state.animationSpeed) + 800; // animation + small tail
+
+  els.exportVideo.disabled = true;
+  els.exportVideoLabel.textContent = 'Recording…';
+  els.recordingDot.classList.add('active');
+  showToast(`Recording ${(duration/1000).toFixed(1)}s @ ${W}×${H}…`);
+
+  // Offscreen canvas (kept attached but visually hidden so context is preserved)
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  off.style.position = 'fixed';
+  off.style.left = '-99999px';
+  off.style.top = '0';
+  document.body.appendChild(off);
+  const ctx = off.getContext('2d');
+
+  // Pick an MP4-compatible MIME if possible, otherwise webm
+  const candidates = [
+    'video/mp4;codecs=avc1.42E01E',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  let mime = candidates.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+  const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+
+  const stream = off.captureStream(60);
+  const chunks = [];
+  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+  const cleanup = () => {
+    try { off.remove(); } catch(e){}
+    els.exportVideo.disabled = false;
+    els.exportVideoLabel.textContent = 'Record animation';
+    els.recordingDot.classList.remove('active');
+  };
+
+  recorder.onstop = () => {
+    try {
+      const blob = new Blob(chunks, { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chart-animation-${Date.now()}.${ext}`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      showToast(`Video downloaded (${ext.toUpperCase()})`);
+    } catch (err) {
+      console.error(err);
+      showToast('Recording failed: ' + err.message);
+    } finally {
+      cleanup();
+    }
+  };
+
+  // Paint an initial background frame BEFORE starting the recorder
+  // (prevents the first frame from being blank/transparent in some browsers)
+  ctx.fillStyle = state.bgTransparent ? '#0a1219' : state.bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // Start recording
+  try {
+    recorder.start();
+  } catch (err) {
+    cleanup();
+    showToast('Could not start recorder: ' + err.message);
+    return;
+  }
+
+  // Build the animated content on the offscreen canvas
+  let stopHandle = null;
+
+  if (state.chartType === 'circular') {
+    // Custom RAF animation onto offscreen canvas
+    const target = state.rows.reduce((sum, r) => sum + (Number(r.value)||0), 0) / Math.max(1, state.rows.length);
+    const startTs = performance.now();
+    const dur = state.animationSpeed;
+    const animate = (ts) => {
+      const t = Math.min(1, (ts - startTs) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      drawCircularToContext(ctx, W, H, target * eased);
+      if (t < 1) {
+        stopHandle = requestAnimationFrame(animate);
+      }
+    };
+    stopHandle = requestAnimationFrame(animate);
+  } else {
+    // Use Chart.js on the offscreen canvas
+    const cfg = getChartConfig();
+    cfg.options.responsive = false;
+    cfg.options.maintainAspectRatio = false;
+    cfg.options.animation = { duration: state.animationSpeed, easing: 'easeOutCubic' };
+    cfg.plugins = [overlayPlugin];
+    const tempChart = new Chart(ctx, cfg);
+    tempChart.resize(W, H);
+    tempChart.update();
+
+    // Keep a heartbeat so captureStream gets fresh frames even after Chart.js finishes
+    let beatRAF = null;
+    const beat = () => {
+      // Force a tiny redraw to guarantee frames flow to the encoder
+      tempChart.draw();
+      beatRAF = requestAnimationFrame(beat);
+    };
+    beatRAF = requestAnimationFrame(beat);
+
+    stopHandle = () => {
+      if (beatRAF) cancelAnimationFrame(beatRAF);
+      tempChart.destroy();
+    };
+  }
+
+  // Stop after duration
+  setTimeout(() => {
+    try {
+      if (typeof stopHandle === 'function') stopHandle();
+      else if (typeof stopHandle === 'number') cancelAnimationFrame(stopHandle);
+    } catch(e){}
+    if (recorder.state !== 'inactive') {
+      try { recorder.requestData && recorder.requestData(); } catch(e){}
+      try { recorder.stop(); } catch(e){ cleanup(); }
+    } else {
+      cleanup();
+    }
+  }, duration);
+}
+
+/* ---------- Logo upload ---------- */
+els.logoInput.addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    state.logoDataUrl = ev.target.result;
+    const img = new Image();
+    img.onload = () => {
+      logoImage = img;
+      els.logoBtnLabel.textContent = 'Replace logo';
+      els.logoClearBtn.classList.remove('hidden');
+      updateChart();
+      showToast('Logo added');
+    };
+    img.src = state.logoDataUrl;
+  };
+  reader.readAsDataURL(file);
+});
+els.logoClearBtn.addEventListener('click', () => {
+  state.logoDataUrl = null;
+  logoImage = null;
+  els.logoInput.value = '';
+  els.logoBtnLabel.textContent = 'Upload logo';
+  els.logoClearBtn.classList.add('hidden');
+  updateChart();
+});
+
+/* ---------- Wire UI ---------- */
+els.addRowBtn.addEventListener('click', () => {
+  const idx = state.rows.length;
+  state.rows.push({
+    label: `Series ${idx + 1}`,
+    value: 50,
+    color: PALETTE[idx % PALETTE.length],
+  });
+  renderRows();
+  updateChart();
+});
+
+els.titleInput.addEventListener('input', e => { state.title = e.target.value; updateChart(); });
+els.subtitleInput.addEventListener('input', e => { state.subtitle = e.target.value; updateChart(); });
+
+els.speedRange.addEventListener('input', e => {
+  state.animationSpeed = Number(e.target.value);
+  els.speedLabel.textContent = state.animationSpeed + ' ms';
+  e.target.style.setProperty('--val', ((state.animationSpeed - 300) / (4000 - 300) * 100) + '%');
+  // Update existing animation duration silently (no replay)
+  if (chart) { chart.options.animation.duration = state.animationSpeed; }
+});
+
+els.bgColor.addEventListener('input', e => {
+  state.bgColor = e.target.value;
+  state.bgTransparent = false;
+  els.bgTransparent.classList.remove('btn-primary');
+  els.bgTransparent.classList.add('btn-ghost');
+  updateChart();
+});
+els.bgTransparent.addEventListener('click', () => {
+  state.bgTransparent = !state.bgTransparent;
+  if (state.bgTransparent) {
+    els.bgTransparent.classList.remove('btn-ghost');
+    els.bgTransparent.classList.add('btn-primary');
+  } else {
+    els.bgTransparent.classList.remove('btn-primary');
+    els.bgTransparent.classList.add('btn-ghost');
+  }
+  updateChart();
+});
+els.textColor.addEventListener('input', e => { state.textColor = e.target.value; updateChart(); });
+
+els.pills.forEach(btn => {
+  btn.addEventListener('click', () => {
+    els.pills.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    state.chartType = btn.dataset.type;
+    renderChart();
+  });
+});
+
+els.sizeCards.forEach(btn => {
+  btn.addEventListener('click', () => {
+    els.sizeCards.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.exportSize = {
+      w: Number(btn.dataset.w),
+      h: Number(btn.dataset.h),
+      name: btn.dataset.name
+    };
+    showToast('Export size: ' + state.exportSize.name + ' (' + state.exportSize.w + '×' + state.exportSize.h + ')');
+  });
+});
+
+els.exportPng.addEventListener('click', () => exportImage('png'));
+els.exportJpg.addEventListener('click', () => exportImage('jpeg'));
+els.exportVideo.addEventListener('click', exportVideo);
+els.replayBtn.addEventListener('click', replayAnimation);
+
+window.addEventListener('resize', () => {
+  // Re-render to keep canvas crisp
+  if (state.chartType === 'circular') {
+    drawCircularProgress();
+  } else if (chart) {
+    ensureCanvasSize();
+    chart.resize();
+  }
+});
+
+/* ---------- Init ---------- */
+function init() {
+  renderRows();
+  // initialize range fill
+  els.speedRange.style.setProperty('--val', ((state.animationSpeed - 300) / (4000 - 300) * 100) + '%');
+  renderChart();
+}
+init();
+
+// Expose for debugging
+window.__forge = { state, renderChart, exportVideo, exportImage };
+</script>
+</body>
+</html>
