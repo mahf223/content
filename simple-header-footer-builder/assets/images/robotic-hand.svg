@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 800" fill="none">
+  <defs>
+    <!-- Background gradient (deep brand-blue) -->
+    <radialGradient id="bg-grad" cx="50%" cy="55%" r="75%">
+      <stop offset="0%" stop-color="#0e2a3d"/>
+      <stop offset="55%" stop-color="#0a1d2c"/>
+      <stop offset="100%" stop-color="#05111b"/>
+    </radialGradient>
+
+    <!-- Brand accent glow -->
+    <radialGradient id="accent-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1FBBE8" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#1FBBE8" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#1FBBE8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Metallic gradient for hand plates -->
+    <linearGradient id="metal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#e6edf2"/>
+      <stop offset="100%" stop-color="#9aa8b4"/>
+    </linearGradient>
+
+    <!-- Darker metal for inner mechanics -->
+    <linearGradient id="metal-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#3b4a57"/>
+      <stop offset="100%" stop-color="#1a242e"/>
+    </linearGradient>
+
+    <!-- Brand cyan gradient for joint highlights -->
+    <linearGradient id="brand-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#7AE2FF"/>
+      <stop offset="50%" stop-color="#1FBBE8"/>
+      <stop offset="100%" stop-color="#0d7fa6"/>
+    </linearGradient>
+
+    <!-- Soft glow filter -->
+    <filter id="cyan-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="cyan-glow-strong" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+
+    <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Reusable finger segment (a tapered rounded plate) -->
+    <symbol id="segment" viewBox="0 0 60 90">
+      <!-- outer plate -->
+      <path d="M14 6 Q30 0 46 6 L52 78 Q30 88 8 78 Z" fill="url(#metal)" stroke="#5c6b78" stroke-width="1.2"/>
+      <!-- side shadow -->
+      <path d="M14 6 Q30 0 46 6 L48 24 Q30 18 12 24 Z" fill="#ffffff" opacity="0.55"/>
+      <!-- inner channel -->
+      <path d="M22 30 L38 30 L40 70 L20 70 Z" fill="url(#metal-dark)" opacity="0.85"/>
+      <!-- brand glow strip -->
+      <rect x="27" y="34" width="6" height="32" rx="3" fill="url(#brand-cyan)"/>
+    </symbol>
+
+    <!-- Reusable knuckle joint (cyan glowing pivot) -->
+    <symbol id="knuckle" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="18" fill="#15202a" stroke="#5c6b78" stroke-width="1.2"/>
+      <circle cx="20" cy="20" r="11" fill="url(#brand-cyan)"/>
+      <circle cx="20" cy="20" r="6"  fill="#ffffff" opacity="0.85"/>
+      <circle cx="20" cy="20" r="3"  fill="#1FBBE8"/>
+    </symbol>
+  </defs>
+
+  <!-- BACKGROUND -->
+  <rect width="700" height="800" fill="url(#bg-grad)"/>
+
+  <!-- Subtle vignette glow behind hand -->
+  <ellipse cx="370" cy="430" rx="320" ry="280" fill="url(#accent-glow)"/>
+
+  <!-- Decorative star outline (brand color) -->
+  <g stroke="#1FBBE8" stroke-width="2.5" fill="none" opacity="0.85" filter="url(#cyan-glow)">
+    <polygon points="350,90 412,300 632,300 454,430 522,640 350,510 178,640 246,430 68,300 288,300"/>
+  </g>
+
+  <!-- Faint inner star halo -->
+  <polygon points="350,90 412,300 632,300 454,430 522,640 350,510 178,640 246,430 68,300 288,300"
+           stroke="#1FBBE8" stroke-width="14" fill="none" opacity="0.06" filter="url(#cyan-glow-strong)"/>
+
+  <!-- Decorative dot grid (top-left) -->
+  <g fill="#1FBBE8" opacity="0.35">
+    <circle cx="40"  cy="40" r="2"/>
+    <circle cx="60"  cy="40" r="2"/>
+    <circle cx="80"  cy="40" r="2"/>
+    <circle cx="40"  cy="60" r="2"/>
+    <circle cx="60"  cy="60" r="2"/>
+    <circle cx="40"  cy="80" r="2"/>
+  </g>
+
+  <!-- Small "ar" badge top-left (matches reference) -->
+  <g transform="translate(28, 110)">
+    <circle cx="22" cy="22" r="22" fill="#0a1d2c" stroke="#1FBBE8" stroke-width="2"/>
+    <text x="22" y="28" font-family="Arial, sans-serif" font-size="16" font-weight="700"
+          fill="#1FBBE8" text-anchor="middle">ar</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ROBOTIC HAND                                    -->
+  <!-- Composition: palm at lower-right, four fingers  -->
+  <!-- extending up-left, thumb to the right.          -->
+  <!-- ============================================== -->
+  <g filter="url(#drop-shadow)" transform="translate(120, 170)">
+
+    <!-- PALM / WRIST -->
+    <g>
+      <!-- Wrist cuff -->
+      <path d="M260 470 Q360 460 430 480 L450 560 Q360 580 250 560 Z"
+            fill="url(#metal-dark)" stroke="#5c6b78" stroke-width="1.5"/>
+      <rect x="270" y="500" width="170" height="10" fill="#1FBBE8" opacity="0.7"/>
+      <rect x="270" y="520" width="170" height="4"  fill="#1FBBE8" opacity="0.4"/>
+
+      <!-- Palm plate -->
+      <path d="M180 320
+               Q200 280 260 270
+               Q330 260 400 280
+               Q450 295 460 360
+               L470 470
+               Q380 490 250 475
+               L210 460
+               Q175 420 180 320 Z"
+            fill="url(#metal)" stroke="#5c6b78" stroke-width="1.5"/>
+
+      <!-- Palm highlight -->
+      <path d="M210 300 Q280 280 380 295 Q430 305 440 350
+               Q380 330 280 335 Q230 340 210 360 Z"
+            fill="#ffffff" opacity="0.55"/>
+
+      <!-- Palm inner detail -->
+      <path d="M250 360 Q330 350 410 365 L420 430 Q330 440 240 425 Z"
+            fill="url(#metal-dark)" opacity="0.55"/>
+      <circle cx="330" cy="395" r="14" fill="url(#brand-cyan)" filter="url(#cyan-glow)"/>
+      <circle cx="330" cy="395" r="5"  fill="#ffffff"/>
+    </g>
+
+    <!-- INDEX FINGER (left-most, longest, points up) -->
+    <g transform="translate(120, 60) rotate(-8)">
+      <use href="#segment" x="0"  y="0"   width="60" height="90"/>
+      <use href="#knuckle" x="10" y="80"  width="40" height="40"/>
+      <use href="#segment" x="0"  y="115" width="60" height="90"/>
+      <use href="#knuckle" x="10" y="195" width="40" height="40"/>
+      <use href="#segment" x="0"  y="230" width="60" height="100"/>
+      <use href="#knuckle" x="10" y="320" width="40" height="40"/>
+    </g>
+
+    <!-- MIDDLE FINGER -->
+    <g transform="translate(195, 35) rotate(-2)">
+      <use href="#segment" x="0"  y="0"   width="60" height="100"/>
+      <use href="#knuckle" x="10" y="90"  width="40" height="40"/>
+      <use href="#segment" x="0"  y="125" width="60" height="100"/>
+      <use href="#knuckle" x="10" y="215" width="40" height="40"/>
+      <use href="#segment" x="0"  y="250" width="60" height="110"/>
+      <use href="#knuckle" x="10" y="350" width="40" height="40"/>
+    </g>
+
+    <!-- RING FINGER -->
+    <g transform="translate(270, 55) rotate(4)">
+      <use href="#segment" x="0"  y="0"   width="60" height="95"/>
+      <use href="#knuckle" x="10" y="85"  width="40" height="40"/>
+      <use href="#segment" x="0"  y="120" width="60" height="100"/>
+      <use href="#knuckle" x="10" y="210" width="40" height="40"/>
+      <use href="#segment" x="0"  y="245" width="60" height="105"/>
+      <use href="#knuckle" x="10" y="340" width="40" height="40"/>
+    </g>
+
+    <!-- PINKY -->
+    <g transform="translate(345, 95) rotate(10)">
+      <use href="#segment" x="0"  y="0"   width="55" height="80"/>
+      <use href="#knuckle" x="8"  y="70"  width="38" height="38"/>
+      <use href="#segment" x="0"  y="103" width="55" height="85"/>
+      <use href="#knuckle" x="8"  y="180" width="38" height="38"/>
+      <use href="#segment" x="0"  y="213" width="55" height="90"/>
+      <use href="#knuckle" x="8"  y="295" width="38" height="38"/>
+    </g>
+
+    <!-- THUMB (right side, angled) -->
+    <g transform="translate(420, 290) rotate(35)">
+      <use href="#segment" x="0"  y="0"   width="60" height="90"/>
+      <use href="#knuckle" x="10" y="80"  width="40" height="40"/>
+      <use href="#segment" x="0"  y="115" width="60" height="95"/>
+      <use href="#knuckle" x="10" y="200" width="40" height="40"/>
+    </g>
+
+    <!-- Bright cyan glow over fingertip area -->
+    <circle cx="220" cy="40"  r="55" fill="url(#accent-glow)" opacity="0.7"/>
+  </g>
+
+  <!-- Foreground accent particles -->
+  <g fill="#1FBBE8">
+    <circle cx="610" cy="180" r="2.5" opacity="0.7"/>
+    <circle cx="640" cy="220" r="1.8" opacity="0.5"/>
+    <circle cx="80"  cy="500" r="2"   opacity="0.6"/>
+    <circle cx="120" cy="640" r="2.5" opacity="0.5"/>
+    <circle cx="600" cy="620" r="2"   opacity="0.6"/>
+    <circle cx="50"  cy="380" r="1.5" opacity="0.5"/>
+  </g>
+
+  <!-- Subtle scan-lines / horizon glow at the bottom -->
+  <rect x="0" y="720" width="700" height="80"
+        fill="#1FBBE8" opacity="0.05"/>
+  <rect x="0" y="745" width="700" height="2"
+        fill="#1FBBE8" opacity="0.25"/>
+</svg>
